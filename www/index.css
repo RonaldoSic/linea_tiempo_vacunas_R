@@ -1,0 +1,51 @@
+:root {
+  /*paleta de colores primarios y secundarios */
+  --main-color: #333;
+  --color_principal: #192854;
+  --color_secundario: #88c0d5;
+  --color_terciario: #24b2e3;
+  --color_fondo: #ffffff;
+  /* Colores para el diseño */
+  --color_disenio: #4388ee;
+  --color_disenio2: #283960;
+  --color_disenio3: #0558aa;
+  /* Colores para los textos */
+  --color_texto: #002e5b;
+  --color_texto2: #121c33;
+  --color_texto3: #4388ee;
+  --color_texto4: #000000;
+  /* Colores segun ciclo de vida  */
+  --color_woman: #ad56cd;
+  --color_pregnant: #4a3b84;
+  --color_puerperium: #a1dfff;
+  --color_children_under_one_year: #61bbb6;
+  --color_children_from_one_to_five_years: #92abc9;
+  /* Colores segun tipo de vacuna */
+  --color_opv: #f4a261;
+  --color_spr: #2a9d8f;
+  --color_dot_spr: #7988dd;
+  --color_dot_opv: #a44878;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color_fondo);
+  color: var(--color_texto);
+}
+
+.main-header {
+  background-color: var(--color_principal);
+  color: var(--color_fondo);
+  padding: 10px 0;
+  text-align: center;
+}
+
+.main-header .navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color_principal);
+  color: var(--color_fondo);
+}
