@@ -54,7 +54,7 @@ input_semana_inicial <- 1
 input_semana_final <- 9
 
 # Funcion que calcula la semana de la campania y lo agrega a la data
-calcular_semana <- function(data, fecha_inicio_campania, dias_por_semana){
+calcular_semana <- function(fecha_inicio, fecha_fin, dias_por_semana){
   # Calculo de la cantidad de dias entre dos fechas
   dias <- as.numeric(difftime(fecha_fin, fecha_inicio, units = "days"))
   # Calculo de la cantidad de semanas
