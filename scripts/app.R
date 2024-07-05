@@ -17,10 +17,10 @@ bd_poblacion <- df_campania_vacunacion_persona %>% select(
   MUNICIPIO_ID,
   TOTAL_NINOS,
   TOTAL_NINAS
-  ) %>% mutate(
-    POBLACION_TOTAL_VACUNADA = TOTAL_NINOS + TOTAL_NINAS,
-    ANIO = year(FECHA_VACUNACION)
-  ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE, ANIO) %>% 
+) %>% mutate(
+  POBLACION_TOTAL_VACUNADA = TOTAL_NINOS + TOTAL_NINAS,
+  ANIO = year(FECHA_VACUNACION)
+) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE, ANIO) %>% 
   summarise(
     POBLACION_TOTAL_VACUNADA = sum(POBLACION_TOTAL_VACUNADA)
   )
@@ -40,7 +40,7 @@ bd_vacunas <- df_campania_vacunacion_dosis %>% select(
   TOTAL_DOSIS_SPR,
   TOTAL_DOSIS_OPV,
   ANIO_COHORTE
-  ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>%
+) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>%
   summarise(
     TOTAL_DOSIS_SPR = sum(TOTAL_DOSIS_SPR),
     TOTAL_DOSIS_OPV = sum(TOTAL_DOSIS_OPV)
@@ -55,7 +55,7 @@ bd_vacunas <- df_campania_vacunacion_dosis %>% select(
 if (has_filter) {
   bd_vacunas <- bd_vacunas %>% filter(DEPARTAMENTO_ID == filtro_departamento)
 }
-  
+
 bd_vacunas
 
 
@@ -214,5 +214,90 @@ grafica_avance_campania_vacunacion <- plot_ly(
 )
 
 grafica_avance_campania_vacunacion
+
+
+
+
+# fig <- plot_ly(tabla_vacunados, x = ~fecha, y = ~vacuna_srp, 
+#                type = 'bar', name = 'Vacuna SPR', 
+#                hovertemplate = "%{y}",
+#                marker = list(color = color_spr)
+# ) %>% 
+#   add_trace(y = ~vacuna_opv, name = 'Vacuna OPV',
+#             hovertemplate = "%{y}",
+#             marker = list(color = color_opv)
+#   ) %>% 
+#   add_trace(y = ~cober_srp_acum, type = 'scatter', name ="Cobertura SPR (%)", 
+#             mode = 'lines', yaxis = "y2",
+#             hovertemplate = "%{y}",
+#             #color = color_line_cob_spr, 
+#             #marker = list(color = color_line_cob_spr)
+#             line = list(color = color_line_cob_spr, dash = 'dashdot', width = 2),
+#             marker = list(color = "red", symbol = 'circle')
+#   ) %>% 
+#   add_trace(y = ~cober_opv_acum, type = 'scatter', name = "Cobertura OPV (%)",
+#             mode = 'lines', 
+#             yaxis = "y2",
+#             hovertemplate = "%{y}",
+#             # color = color_line_cob_opv,
+#             # marker = list(color = color_line_cob_opv)
+#             line = list(color = color_line_cob_opv, dash = 'dot', width = 2),
+#             marker = list(color = "green", symbol = 'square')
+#   ) %>%
+#   layout(
+#     yaxis = list(
+#       title = 'Cantidad de vacunas administradas',
+#       showgrid = FALSE,
+#       showline = TRUE,
+#       rangemode = "tozero",
+#       fixedrange = TRUE
+#     ),
+#     yaxis2 = list(
+#       title = 'Cobertura (%)', 
+#       overlaying = "y1",
+#       rangemode = "tozero",
+#       side = 'right',
+#       showgrid = FALSE,
+#       showline = TRUE,
+#       # disable zooming
+#       fixedrange = TRUE
+#     ),
+#     xaxis = list(
+#       title = 'Fecha',
+#       showgrid = FALSE,
+#       showline = TRUE,
+#       # disable zooming
+#       fixedrange = TRUE,
+#       tickformatstops = list(
+#         list(dtickrange = list(NULL, "M1"), value = "%d-%b-%Y"), # Formato de fecha para días
+#         list(dtickrange = list("M1", NULL), value = "%b-%Y")    # Formato de fecha para meses
+#       )
+#     ),
+#     title = list(
+#       text = "Vacunación diaria de SPR y OPV",
+#       x = 0.5,
+#       size = 28
+#     ),
+#     barmode = 'group',
+#     # Add margin for legend
+#     margin = list(l = 40, r = 40, t = 100, b = 40),
+#     # Other plot configs
+#     legend = list(orientation = 'h', y = -0.3, x = 0.5, xanchor = 'center'), # Centrar la leyenda
+#     plot_bgcolor = "#ededed",
+#     paper_bgcolor = "#FFFFFF",
+#     hovermode = 'x unified'
+#   ) %>%
+#   config(
+#     locale = 'es',
+#     displaylogo = FALSE,
+#     modeBarButtonsToRemove = c("select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "zoom", "pan", "autoscale"),
+#     toImageButtonOptions = list(
+#       format = "png",
+#       filename = "comparacion_vacunas_diaria",
+#       height = 600,
+#       width = 1600,
+#       scale = 1
+#     )
+#   )
 
 

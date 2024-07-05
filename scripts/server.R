@@ -16,6 +16,11 @@ shinyServer(function(input, output) {
       filter(IDDEP == input$departamento | input$departamento == "Todos")
   })
   
+  reactive_has_filter <- reactive({
+    ifelse(input$departamento != "Todos" & as.numeric(input$departamento) >= 1 & as.numeric(input$departamento) <= 22, TRUE, FALSE)
+  })
+  
+  
   # Filtros para todos los gráficos -------------------------------------------
   # 
   # output$departamento_ddriss <- renderUI({
@@ -33,6 +38,9 @@ shinyServer(function(input, output) {
   valor_id_depto_select <- 0
   valor_id_ddriss_select <- 0
   has_filter <- FALSE
+  # remove(valor_id_ddriss_select, valor_id_depto_select, has_filter)
+  # remove(has_filter)
+  
   output$departamento_ddriss <- renderUI({
     if (input$rb_seleccion_in == "Departamento") {
       label <- "El filtro se aplica por departamento"
@@ -58,19 +66,54 @@ shinyServer(function(input, output) {
     selectInput(inputId = "departamento", label = label, choices = c("Todos" = "Todos", choices))
   })
   
-  has_filter <- reactive({
-    if (input$departamento != "Todos" & as.numeric(input$departamento) >= 1 & as.numeric(input$departamento) <= 22) {
-      TRUE
+  
+  # Mensaje dinamico que retorna el id del departamento seleccionado, concatenado con el nombre del departamento
+  output$id_depto_seleccionado <- renderText({
+    if (input$departamento == "Todos") {
+      "Todos los departamentos"
     } else {
-      FALSE
+      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+    }
+  })
+  
+  output$id_ddriss_seleccionada <- renderText({
+    if (input$departamento == "Todos") {
+      "Todas las DDRISS"
+    } else {
+      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
     }
   })
   
   
+  output$aplica_filtro <- renderText({
+    has_filter <- reactive_has_filter()
+    ifelse(has_filter, "Si", "No")
+  })
+  
+  # "Avance de la campaña de vacunación "
+  
+  output$titulo_tabla_vacunados <- renderText({
+    if (input$rb_seleccion_in == "Departamento") {
+      if (input$departamento == "Todos") {
+        titleBox <- "Línea de tiempo nivel nacional"
+      } else {
+        # titleBox <- paste0("Linea de tiempo por el departamento de", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
+        titleBox <-paste0("Línea de tiempo del departamento de ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+      }
+    }else {
+      if (input$departamento == "Todos") {
+        titleBox <- "Línea de tiempo nivel nacional"
+      } else {
+        titleBox <- paste0("Linea de tiempo por la DDRISS de", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
+      }
+    }
+    titleBox
+  })
+  
 
   # Grafica de linea de tiempo por departamento, DDRISS y si es en total para todos --------- 
   output$avance_campania_vacunacion <- renderPlotly({
-    
+    # Tratado de datos para la grafica de avance de la campaña de vacunación
     bd_poblacion <- reactive_df_campania_persona() %>% select(
       FECHA_VACUNACION,
       DEPARTAMENTO_NOMBRE,
@@ -85,11 +128,13 @@ shinyServer(function(input, output) {
     ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE, ANIO) %>% 
       summarise(
         POBLACION_TOTAL_VACUNADA = sum(POBLACION_TOTAL_VACUNADA)
-      )
+    )
+    # if(reactive_has_filter()) {
+    #   bd_poblacion <- bd_poblacion %>% filter(DEPARTAMENTO_ID == as.numeric(input$departamento))
+    # }
+    bd_poblacion
     
-    if (has_filter) {
-      bd_poblacion <- bd_poblacion %>% filter(DEPARTAMENTO_ID == filtro_departamento)
-    }
+    
     
     bd_vacunas <- reactive_df_campania_dosis() %>% select(
       FECHA_VACUNACION,
@@ -104,9 +149,9 @@ shinyServer(function(input, output) {
         TOTAL_DOSIS_OPV = sum(TOTAL_DOSIS_OPV)
       )
     
-    if (has_filter) {
-      bd_vacunas <- bd_vacunas %>% filter(DEPARTAMENTO_ID == filtro_departamento)
-    }
+    # if (has_filter) {
+    #   bd_vacunas <- bd_vacunas %>% filter(DEPARTAMENTO_ID == filtro_departamento)
+    # }
     
 
     bd_nacidos_ine <- reactive_df_nacidos_vivos_ine() %>% pivot_wider(
@@ -142,19 +187,19 @@ shinyServer(function(input, output) {
       )
     
     
-    if (has_filter) {
-      bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == filtro_departamento)
-    } else {
-      # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
-      bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
-        IDDEP = 0,
-        POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
-      ) %>% group_by(IDDEP) %>% 
-        summarise(
-          POBLACION_TOTAL = sum(POBLACION_TOTAL)
-        )
-    }
-    
+    # if (has_filter) {
+    #   bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == filtro_departamento)
+    # } else {
+    #   # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
+    #   bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
+    #     IDDEP = 0,
+    #     POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
+    #   ) %>% group_by(IDDEP) %>% 
+    #     summarise(
+    #       POBLACION_TOTAL = sum(POBLACION_TOTAL)
+    #     )
+    # }
+    # 
     # rm(tabla_vacunados)
     tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas, 
                                                   by = c("FECHA_VACUNACION", "DEPARTAMENTO_ID", "DEPARTAMENTO_NOMBRE")) %>% 
@@ -244,7 +289,7 @@ shinyServer(function(input, output) {
         scale = 1
       )
     )
-    
+    grafica_avance_campania_vacunacion
     
     
     
