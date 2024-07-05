@@ -1,9 +1,13 @@
 # rm(list = ls()[grep("^color_", ls())])
 # rm(bd_poblacion)
+rm(list = ls()[grep("^bd_", ls())])
 
 filtro_departamento <- 3
+# rm(filtro_departamento)
 anio_cohorte <- 2019
+# rm(anio_cohorte)
 has_filter <- filtro_departamento >= 1 & filtro_departamento <= 22
+# rm(has_filter)
 
 bd_poblacion <- df_campania_vacunacion_persona %>% select(
   FECHA_VACUNACION,
@@ -113,9 +117,9 @@ if (has_filter) {
 }
 
 bd_nacidos_ine
-bd_nacidos_ine_nacional
+# bd_nacidos_ine_nacional
 
-
+# rm(tabla_vacunados)
 tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas, 
                                               by = c("FECHA_VACUNACION", "DEPARTAMENTO_ID", "DEPARTAMENTO_NOMBRE")) %>% 
   mutate(
@@ -138,36 +142,58 @@ tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas,
 tabla_vacunados
 
 # ---- CONSTRUYENDO LA GRAFICA ----
-
+# rm(grafica_avance_campania_vacunacion)
 grafica_avance_campania_vacunacion <- plot_ly(
-  tabla_vacunados, x = ~FECHA_VACUNACION, y = ~TOTAL_DOSIS_SPR,
-  type = 'bar', name = 'Vacuna SPR', 
+  tabla_vacunados, 
+  x = ~FECHA_VACUNACION, 
+  y = ~TOTAL_DOSIS_SPR,
+  type = 'bar', 
+  name = 'Vacuna SPR', 
   hovertemplate = "%{y}",
   marker = list(color = color_principal)
 ) %>% add_trace(
-  y = ~TOTAL_DOSIS_OPV, name = 'Vacuna OPV',
+  y = ~TOTAL_DOSIS_OPV,
+  name = 'Vacuna OPV',
   hovertemplate = "%{y}",
   marker = list(color = color_secundario)
 ) %>% add_trace(
-  y = ~COBERTURA_SPR, name = 'Cobertura SPR (%)',
-  mode = 'lines+markers', yaxis = 'y2',
+  y = ~COBERTURA_SPR, 
+  name = 'Cobertura SPR (%)',
+  type = 'scatter',
+  mode = 'lines', 
+  yaxis = 'y2',
   hovertemplate = "%{y}%",
   line = list(color = color_terciario, width = 2, dash = 'dashdot'),
   marker = list(color = color_disenio)
 ) %>% add_trace(
-  y = ~COBERTURA_OPV, name = 'Cobertura OPV (%)',
-  mode = 'lines+markers', yaxis = 'y2',
+  y = ~COBERTURA_OPV, 
+  name = 'Cobertura OPV (%)',
+  type = 'scatter',
+  mode = 'lines', 
+  yaxis = 'y2',
   hovertemplate = "%{y}%",
   line = list(color = color_disenio, width = 2, dash = 'dashdot'),
-  marker = list(color = color_disenio)
+  marker = list(color = color_disenio3)
 ) %>% layout(
   title = 'Avance de la campaña de vacunación',
-  xaxis = list(title = 'Fecha de vacunación', showgrid = FALSE, zeroline = FALSE, fixedrange = TRUE, 
-               tickformat = '%d-%M-%Y'),
-  yaxis = list(title = 'Total de dosis aplicadas', rangemode = 'tozero', showgrid = FALSE, 
-               zeroline = FALSE, fixedrange = TRUE, tickformat = ',d'),
-  yaxis2 = list(title = 'Cobertura (%)', overlaying = 'y', side = 'right', rangemode = 'tozero', 
-                showgrid = FALSE, zeroline = FALSE, fixedrange = TRUE),
+  xaxis = list(title = 'Fecha de vacunación', 
+               showgrid = FALSE, 
+               zeroline = FALSE, 
+               fixedrange = TRUE, 
+               tickformat = '%d-%B-%Y'),
+  yaxis = list(title = 'Total de dosis aplicadas', 
+               rangemode = 'tozero', 
+               showgrid = FALSE, 
+               zeroline = FALSE, 
+               fixedrange = TRUE, 
+               tickformat = ',d'),
+  yaxis2 = list(title = 'Cobertura (%)', 
+                overlaying = 'y', 
+                side = 'right', 
+                rangemode = 'tozero', 
+                showgrid = FALSE,
+                zeroline = FALSE,
+                fixedrange = TRUE),
   barmode = 'group',
   titlefont = list(size = 16),
   margin = list(l = 50, r = 50, b = 50, t = 50),
