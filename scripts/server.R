@@ -41,6 +41,8 @@ shinyServer(function(input, output) {
   # remove(valor_id_ddriss_select, valor_id_depto_select, has_filter)
   # remove(has_filter)
   
+  
+  # -------------Espacio para visualizar los filtros seleccionados ----------------
   output$departamento_ddriss <- renderUI({
     if (input$rb_seleccion_in == "Departamento") {
       label <- "El filtro se aplica por departamento"
@@ -48,7 +50,7 @@ shinyServer(function(input, output) {
         distinct(DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>%
         arrange(DEPARTAMENTO_NOMBRE)
       choices <- setNames(choices_df$DEPARTAMENTO_ID, choices_df$DEPARTAMENTO_NOMBRE)
-      
+
       valor_id_depto_select <- as.numeric(input$departamento_ddriss)
     }else{
       label <- "El filtro se aplica por DDRISS"
@@ -58,37 +60,32 @@ shinyServer(function(input, output) {
       choices <- setNames(choices_df$IDAS, choices_df$AREA_SALUD)
       valor_id_ddriss_select <- as.numeric(input$departamento_ddriss)
     }
-    # si ha seleccionado un departamento y el id esta entre 1 y 22 entonces si tiene filtro
-    # if (input$departamento != "Todos" & as.numeric(input$departamento) >= 1 & as.numeric(input$departamento) <= 22) {
-    #   has_filter <- TRUE
-    # }
-    # selectInput(inputId = "departamento", label = label, choices = c("Todos", choices))
     selectInput(inputId = "departamento", label = label, choices = c("Todos" = "Todos", choices))
   })
+
   
-  
-  # Mensaje dinamico que retorna el id del departamento seleccionado, concatenado con el nombre del departamento
-  output$id_depto_seleccionado <- renderText({
-    if (input$departamento == "Todos") {
-      "Todos los departamentos"
-    } else {
-      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
-    }
-  })
-  
-  output$id_ddriss_seleccionada <- renderText({
-    if (input$departamento == "Todos") {
-      "Todas las DDRISS"
-    } else {
-      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
-    }
-  })
-  
-  
-  output$aplica_filtro <- renderText({
-    has_filter <- reactive_has_filter()
-    ifelse(has_filter, "Si", "No")
-  })
+  # ---------------- Mensajes dinamico que retorna el id del departamento seleccionado, concatenado con el nombre del departamento
+  # output$id_depto_seleccionado <- renderText({
+  #   if (input$departamento == "Todos") {
+  #     "Todos los departamentos"
+  #   } else {
+  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+  #   }
+  # })
+  # 
+  # output$id_ddriss_seleccionada <- renderText({
+  #   if (input$departamento == "Todos") {
+  #     "Todas las DDRISS"
+  #   } else {
+  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
+  #   }
+  # })
+  # 
+  # 
+  # output$aplica_filtro <- renderText({
+  #   has_filter <- reactive_has_filter()
+  #   ifelse(has_filter, "Si", "No")
+  # })
   
   # "Avance de la campaña de vacunación "
   
@@ -187,28 +184,31 @@ shinyServer(function(input, output) {
       )
     
     
-    # if (has_filter) {
-    #   bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == filtro_departamento)
-    # } else {
-    #   # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
-    #   bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
-    #     IDDEP = 0,
-    #     POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
-    #   ) %>% group_by(IDDEP) %>% 
-    #     summarise(
-    #       POBLACION_TOTAL = sum(POBLACION_TOTAL)
-    #     )
-    # }
+    if (reactive_has_filter()) {
+      bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == as.numeric(input$departamento))
+    } else {
+      # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
+      bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
+        IDDEP = 0,
+        POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
+      ) %>% group_by(IDDEP) %>%
+        summarise(
+          POBLACION_TOTAL = sum(POBLACION_TOTAL)
+        )
+    }
     # 
     # rm(tabla_vacunados)
     tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas, 
                                                   by = c("FECHA_VACUNACION", "DEPARTAMENTO_ID", "DEPARTAMENTO_NOMBRE")) %>% 
       mutate(
         # si tiene filtro se usa la población total de nacidos vivos del INE, de lo contrario se usa la población total de nacidos vivos del INE nacional
-        COBERTURA_SPR = ifelse(has_filter, round((TOTAL_DOSIS_SPR / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                               round((TOTAL_DOSIS_SPR / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2)),
-        COBERTURA_OPV = ifelse(has_filter, round((TOTAL_DOSIS_OPV / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                               round((TOTAL_DOSIS_OPV / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2))
+        VACUNA_SPR_ACUMULADO = cumsum(TOTAL_DOSIS_SPR),
+        VACUNA_OPV_ACUMULADO = cumsum(TOTAL_DOSIS_OPV),
+        COBERTURA_SPR = ifelse(reactive_has_filter(), round((VACUNA_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
+                               round((VACUNA_SPR_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2)),
+        COBERTURA_OPV = ifelse(reactive_has_filter(), round((VACUNA_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
+                               round((VACUNA_OPV_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2))
+        
       ) %>% select(
         DEPARTAMENTO_ID,
         DEPARTAMENTO_NOMBRE,
@@ -217,7 +217,9 @@ shinyServer(function(input, output) {
         TOTAL_DOSIS_SPR,
         TOTAL_DOSIS_OPV,
         COBERTURA_SPR,
-        COBERTURA_OPV
+        COBERTURA_OPV,
+        VACUNA_SPR_ACUMULADO,
+        VACUNA_OPV_ACUMULADO
       )
   
     grafica_avance_campania_vacunacion <- plot_ly(
@@ -237,11 +239,11 @@ shinyServer(function(input, output) {
       y = ~COBERTURA_SPR, 
       name = 'Cobertura SPR (%)',
       type = 'scatter',
-      mode = 'lines', 
+      mode = 'lines',
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = color_terciario, width = 2, dash = 'dashdot'),
-      marker = list(color = color_disenio)
+      line = list(color = color_pregnant, dash = 'dashdot', width = 2),
+      marker = list(color = "red", symbol = 'circle')
     ) %>% add_trace(
       y = ~COBERTURA_OPV, 
       name = 'Cobertura OPV (%)',
@@ -249,31 +251,41 @@ shinyServer(function(input, output) {
       mode = 'lines', 
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = color_disenio, width = 2, dash = 'dashdot'),
+      line = list(color = "green", width = 2, dash = 'dashdot'),
       marker = list(color = color_disenio3)
     ) %>% layout(
       title = 'Avance de la campaña de vacunación',
       xaxis = list(title = 'Fecha de vacunación', 
-                   showgrid = FALSE, 
+                   showgrid = FALSE,
+                   showline = TRUE,
                    zeroline = FALSE, 
-                   fixedrange = TRUE, 
-                   tickformat = '%d-%B-%Y'),
+                   fixedrange = TRUE,
+                   tickformatstops = list(
+                     list(dtickrange = list(NULL, "M1"), value = "%d-%b-%Y"), # Formato de fecha para días
+                     list(dtickrange = list("M1", NULL), value = "%b-%Y")    # Formato de fecha para meses
+                    )
+                   ),
       yaxis = list(title = 'Total de dosis aplicadas', 
                    rangemode = 'tozero', 
                    showgrid = FALSE, 
+                   showline = TRUE,
                    zeroline = FALSE, 
-                   fixedrange = TRUE, 
-                   tickformat = ',d'),
+                   fixedrange = TRUE
+                   # tickformat = ',d'
+                   ),
       yaxis2 = list(title = 'Cobertura (%)', 
-                    overlaying = 'y', 
+                    overlaying = 'y1', 
                     side = 'right', 
                     rangemode = 'tozero', 
                     showgrid = FALSE,
+                    showline = TRUE,
                     zeroline = FALSE,
-                    fixedrange = TRUE),
+                    fixedrange = TRUE
+                    ),
       barmode = 'group',
       titlefont = list(size = 16),
-      margin = list(l = 50, r = 50, b = 50, t = 50),
+      margin = list(l = 40, r = 40, b = 100, t = 50),
+      legend = list(orientation = 'h', y = -0.8, x = 0.5, xanchor = 'center'), # Centrar la leyenda
       hovermode = 'x unified',
       paper_bgcolor = color_fondo,
       plot_bgcolor = color_fondo
@@ -290,9 +302,6 @@ shinyServer(function(input, output) {
       )
     )
     grafica_avance_campania_vacunacion
-    
-    
-    
   })
   
   output$avance_campania_vacunacion_ddriss <- renderPlotly({
