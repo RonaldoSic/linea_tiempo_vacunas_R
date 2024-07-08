@@ -57,10 +57,6 @@ if (has_filter) {
   bd_vacunas <- bd_vacunas %>% filter(DEPARTAMENTO_ID == filtro_departamento)
 }
 
-bd_vacunas <- bd_vacunas %>% mutate(
-  cobertura_spr_acumulado = cumsum(TOTAL_DOSIS_SPR + TOTAL_DOSIS_SPR),
-  cobertura_opv_acumulado = cumsum(TOTAL_DOSIS_OPV)
-)
 
 bd_vacunas
 
