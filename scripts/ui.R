@@ -38,15 +38,15 @@ dashboardPage(
               uiOutput(outputId = "departamento_ddriss")
             ),
             # Un espacio para poder mostrar el id del departamento seleccionado y el id de la DDRIS seleccionada
-            # column(
-            #   width = 12,
-            #   h3("Departamento seleccionado:"),
-            #   h4(textOutput(outputId = "id_depto_seleccionado")),
-            #   h3("DDRISS seleccionada:"),
-            #   h4(textOutput(outputId = "id_ddriss_seleccionada")),
-            #   h3("Se aplica filtro?"),
-            #   h4(textOutput(outputId = "aplica_filtro"))
-            # )
+            column(
+              width = 12,
+              h3("Departamento seleccionado:"),
+              h4(textOutput(outputId = "id_depto_seleccionado")),
+              h3("DDRISS seleccionada:"),
+              h4(textOutput(outputId = "id_ddriss_seleccionada")),
+              h3("Se aplica filtro?"),
+              h4(textOutput(outputId = "aplica_filtro"))
+            )
           ),
           tabBox(
             title = p(textOutput(outputId = "titulo_tabla_vacunados")),

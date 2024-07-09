@@ -65,27 +65,27 @@ shinyServer(function(input, output) {
 
   
   # ---------------- Mensajes dinamico que retorna el id del departamento seleccionado, concatenado con el nombre del departamento
-  # output$id_depto_seleccionado <- renderText({
-  #   if (input$departamento == "Todos") {
-  #     "Todos los departamentos"
-  #   } else {
-  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
-  #   }
-  # })
-  # 
-  # output$id_ddriss_seleccionada <- renderText({
-  #   if (input$departamento == "Todos") {
-  #     "Todas las DDRISS"
-  #   } else {
-  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
-  #   }
-  # })
-  # 
-  # 
-  # output$aplica_filtro <- renderText({
-  #   has_filter <- reactive_has_filter()
-  #   ifelse(has_filter, "Si", "No")
-  # })
+  output$id_depto_seleccionado <- renderText({
+    if (input$departamento == "Todos") {
+      "Todos los departamentos"
+    } else {
+      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+    }
+  })
+
+  output$id_ddriss_seleccionada <- renderText({
+    if (input$departamento == "Todos") {
+      "Todas las DDRISS"
+    } else {
+      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
+    }
+  })
+
+
+  output$aplica_filtro <- renderText({
+    has_filter <- reactive_has_filter()
+    ifelse(has_filter, "Si", "No")
+  })
   
   # "Avance de la campaña de vacunación "
   

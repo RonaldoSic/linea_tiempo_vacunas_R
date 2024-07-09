@@ -2,15 +2,16 @@
 # rm(bd_poblacion)
 # rm(list = ls()[grep("^bd_", ls())])
 
-filtro_departamento <- 1
+filtro_departamento <- 14
 # rm(filtro_departamento)
-anio_cohorte <- 2019
+# anio_cohorte <- 2019
 # rm(anio_cohorte)
 has_filter <- filtro_departamento >= 1 & filtro_departamento <= 22
 # rm(has_filter)
 
 
-# ------------- SE EXTRAEN LOS A LA POBLACIÓN VACUNADA Y A LAS DOSIS APLICADAS -------------
+# rm(bd_pobñacion)
+# ------------- SE EXTRAE LA POBLACIÓN VACUNADA DIARIA  -------------
 bd_poblacion <- df_campania_vacunacion_persona %>% select(
   FECHA_VACUNACION,
   DEPARTAMENTO_NOMBRE,
@@ -20,11 +21,16 @@ bd_poblacion <- df_campania_vacunacion_persona %>% select(
   TOTAL_NINOS,
   TOTAL_NINAS
 ) %>% mutate(
-  POBLACION_TOTAL_VACUNADA = TOTAL_NINOS + TOTAL_NINAS
-) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>% 
-  summarise(
-    POBLACION_TOTAL_VACUNADA = sum(POBLACION_TOTAL_VACUNADA)
-  )
+  TOTAL_POBLACION_VACUNADOS_DIARIO = TOTAL_NINOS + TOTAL_NINAS
+) %>% group_by(
+  FECHA_VACUNACION,
+  DEPARTAMENTO_ID,
+  MUNICIPIO_ID
+) 
+# %>%
+#   summarise(
+#     POBLACION_TOTAL_VACUNADA = sum(POBLACION_TOTAL_VACUNADA)
+#   )
 
 if (has_filter) {
   bd_poblacion <- bd_poblacion %>% filter(DEPARTAMENTO_ID == filtro_departamento)
@@ -106,45 +112,66 @@ bd_nacidos_ine <- df_nacidos_vivos_ine %>% pivot_wider(
 
 bd_nacidos_ine
 
+# if (has_filter) {
+#   bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == filtro_departamento)
+#   #bd_nacidos_ine_nacional <- 0
+# } else {
+#   # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
+#   bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
+#     IDDEP = 0,
+#     POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
+#   ) %>% group_by(IDDEP) %>% 
+#     summarise(
+#       POBLACION_TOTAL = sum(POBLACION_TOTAL)
+#     )
+# }
+
 if (has_filter) {
   bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == filtro_departamento)
+  #bd_nacidos_ine_nacional <- 0
 } else {
   # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
-  bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
+  bd_nacidos_ine <- bd_nacidos_ine %>% summarise(
     IDDEP = 0,
     POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
-  ) %>% group_by(IDDEP) %>% 
+  ) %>% group_by(IDDEP) %>%
     summarise(
       POBLACION_TOTAL = sum(POBLACION_TOTAL)
     )
 }
 
+
 bd_nacidos_ine
-# bd_nacidos_ine_nacional
+bd_nacidos_ine_nacional
 
 # rm(tabla_vacunados)
-tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas, 
-                                              by = c("FECHA_VACUNACION", "DEPARTAMENTO_ID", "DEPARTAMENTO_NOMBRE")) %>% 
+tabla_vacunados <- bd_vacunas %>% group_by(FECHA_VACUNACION) %>%
+  summarise(TOTAL_DOSIS_SPR = sum(TOTAL_DOSIS_SPR),
+           TOTAL_DOSIS_OPV = sum(TOTAL_DOSIS_OPV) ) %>%
   mutate(
     # si tiene filtro se usa la población total de nacidos vivos del INE, de lo contrario se usa la población total de nacidos vivos del INE nacional
-    VACUNAS_SPR_ACUMULADO = cumsum(TOTAL_DOSIS_SPR), #Debe de ser la suma acumulada de las vacunas aplicadas, por ejemplo si en el primer día se aplicaron 10 vacunas, en el segundo día 20, en el tercer día 30, entonces el acumulado del tercer día sería 60 
+    VACUNAS_SPR_ACUMULADO = cumsum(TOTAL_DOSIS_SPR),
     VACUNAS_OPV_ACUMULADO = cumsum(TOTAL_DOSIS_OPV),
-    COBERTURA_SPR_ACUMULADO = ifelse(has_filter, round((VACUNAS_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                           round((VACUNAS_SPR_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2)),
-    COBERTURA_OPV_ACUMULADO = ifelse(has_filter, round((VACUNAS_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                           round((VACUNAS_OPV_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2))
-  ) %>% select(
-    DEPARTAMENTO_ID,
-    DEPARTAMENTO_NOMBRE,
-    FECHA_VACUNACION,
-    POBLACION_TOTAL_VACUNADA,
-    TOTAL_DOSIS_SPR,
-    TOTAL_DOSIS_OPV,
-    COBERTURA_SPR_ACUMULADO,
-    COBERTURA_OPV_ACUMULADO,
-    VACUNAS_SPR_ACUMULADO,
-    VACUNAS_OPV_ACUMULADO,
-  )
+    COBERTURA_SPR_ACUMULADO = round((VACUNAS_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2),
+    COBERTURA_OPV_ACUMULADO = round((VACUNAS_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2)
+    
+  ) 
+
+
+
+
+
+# %>% select(
+#     DEPARTAMENTO_ID,
+#     DEPARTAMENTO_NOMBRE,
+#     FECHA_VACUNACION,
+#     TOTAL_DOSIS_SPR,
+#     TOTAL_DOSIS_OPV,
+#     VACUNAS_SPR_ACUMULADO,
+#     VACUNAS_OPV_ACUMULADO,
+#     COBERTURA_SPR_ACUMULADO,
+#     COBERTURA_OPV_ACUMULADO
+#   )
 
 tabla_vacunados
 
@@ -164,7 +191,7 @@ grafica_avance_campania_vacunacion <- plot_ly(
   hovertemplate = "%{y}",
   marker = list(color = color_secundario)
 ) %>% add_trace(
-  y = ~COBERTURA_SPR, 
+  y = ~COBERTURA_SPR_ACUMULADO, 
   name = 'Cobertura SPR (%)',
   type = 'scatter',
   mode = 'lines', 
@@ -173,7 +200,7 @@ grafica_avance_campania_vacunacion <- plot_ly(
   line = list(color = color_terciario, width = 2, dash = 'dashdot'),
   marker = list(color = color_disenio)
 ) %>% add_trace(
-  y = ~COBERTURA_OPV, 
+  y = ~COBERTURA_OPV_ACUMULADO, 
   name = 'Cobertura OPV (%)',
   type = 'scatter',
   mode = 'lines', 
