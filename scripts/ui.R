@@ -36,24 +36,23 @@ dashboardPage(
             column(
               width = 8,
               uiOutput(outputId = "departamento_ddriss")
-            ),
-            # Un espacio para poder mostrar el id del departamento seleccionado y el id de la DDRIS seleccionada
-            column(
-              width = 12,
-              h3("Departamento seleccionado:"),
-              h4(textOutput(outputId = "id_depto_seleccionado")),
-              h3("DDRISS seleccionada:"),
-              h4(textOutput(outputId = "id_ddriss_seleccionada")),
-              h3("Se aplica filtro?"),
-              h4(textOutput(outputId = "aplica_filtro"))
             )
+            # Un espacio para poder mostrar el id del departamento seleccionado y el id de la DDRIS seleccionada
+            # column(
+            #   width = 12,
+            #   h3("Departamento seleccionado:"),
+            #   h4(textOutput(outputId = "id_depto_seleccionado")),
+            #   h3("DDRISS seleccionada:"),
+            #   h4(textOutput(outputId = "id_ddriss_seleccionada")),
+            #   h3("Se aplica filtro?"),
+            #   h4(textOutput(outputId = "aplica_filtro"))
+            # )
           ),
           tabBox(
             title = p(textOutput(outputId = "titulo_tabla_vacunados")),
             id = "id_tab_linea_tiempo",
             tabPanel(
               "Linea del tiempo",
-              h3("Avance de la campaña de vacunación por departamento"),
               width = 12,
               minHeight = "450px",
               height = "auto",
@@ -66,7 +65,6 @@ dashboardPage(
             ),
             tabPanel(
               "Linea de tiempo por DDRISS",
-              h3("Avance de la campaña por DDRISS"),
               width = 12,
               minHeight = "450px",
               height = "auto",

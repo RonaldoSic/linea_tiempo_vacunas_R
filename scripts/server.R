@@ -2,8 +2,12 @@ source("global.R")
 shinyServer(function(input, output) {
 # REACTIVE DATA
   reactive_df_campania_persona <- reactive({
+    # df_campania_vacunacion_persona %>%
+    #   filter(DEPARTAMENTO_ID == input$departamento | input$departamento == "Todos")
+    # El filtro debe ser eliminando todos los departamentos que no estén en el rango de 1 a 22
     df_campania_vacunacion_persona %>%
-      filter(DEPARTAMENTO_ID == input$departamento | input$departamento == "Todos")
+      filter(DEPARTAMENTO_ID == input$departamento | input$departamento == "Todos") %>%
+      filter(DEPARTAMENTO_ID >= 1 & DEPARTAMENTO_ID <= 22)
   })
 
   reactive_df_campania_dosis <- reactive({
@@ -13,7 +17,8 @@ shinyServer(function(input, output) {
   
   reactive_df_nacidos_vivos_ine <- reactive({
     df_nacidos_vivos_ine %>%
-      filter(IDDEP == input$departamento | input$departamento == "Todos")
+      filter(IDDEP == input$departamento | input$departamento == "Todos") %>% 
+      filter(IDDEP >= 1 & IDDEP <= 22)
   })
   
   reactive_has_filter <- reactive({
@@ -48,9 +53,9 @@ shinyServer(function(input, output) {
       label <- "El filtro se aplica por departamento"
       choices_df <- df_campania_vacunacion_persona %>%
         distinct(DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>%
+        filter(DEPARTAMENTO_ID >= 1 & DEPARTAMENTO_ID <= 22) %>%
         arrange(DEPARTAMENTO_NOMBRE)
       choices <- setNames(choices_df$DEPARTAMENTO_ID, choices_df$DEPARTAMENTO_NOMBRE)
-
       valor_id_depto_select <- as.numeric(input$departamento_ddriss)
     }else{
       label <- "El filtro se aplica por DDRISS"
@@ -65,27 +70,27 @@ shinyServer(function(input, output) {
 
   
   # ---------------- Mensajes dinamico que retorna el id del departamento seleccionado, concatenado con el nombre del departamento
-  output$id_depto_seleccionado <- renderText({
-    if (input$departamento == "Todos") {
-      "Todos los departamentos"
-    } else {
-      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
-    }
-  })
-
-  output$id_ddriss_seleccionada <- renderText({
-    if (input$departamento == "Todos") {
-      "Todas las DDRISS"
-    } else {
-      paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
-    }
-  })
-
-
-  output$aplica_filtro <- renderText({
-    has_filter <- reactive_has_filter()
-    ifelse(has_filter, "Si", "No")
-  })
+  # output$id_depto_seleccionado <- renderText({
+  #   if (input$departamento == "Todos") {
+  #     "Todos los departamentos"
+  #   } else {
+  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+  #   }
+  # })
+  # 
+  # output$id_ddriss_seleccionada <- renderText({
+  #   if (input$departamento == "Todos") {
+  #     "Todas las DDRISS"
+  #   } else {
+  #     paste0("ID: ", input$departamento, " - ", df_campania_vacunacion_persona$AREA_SALUD[df_campania_vacunacion_persona$IDAS == as.numeric(input$departamento)][1])
+  #   }
+  # })
+  # 
+  # 
+  # output$aplica_filtro <- renderText({
+  #   has_filter <- reactive_has_filter()
+  #   ifelse(has_filter, "Si", "No")
+  # })
   
   # "Avance de la campaña de vacunación "
   
@@ -120,19 +125,9 @@ shinyServer(function(input, output) {
       TOTAL_NINOS,
       TOTAL_NINAS
     ) %>% mutate(
-      POBLACION_TOTAL_VACUNADA = TOTAL_NINOS + TOTAL_NINAS,
-      ANIO = year(FECHA_VACUNACION)
-    ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE, ANIO) %>% 
-      summarise(
-        POBLACION_TOTAL_VACUNADA = sum(POBLACION_TOTAL_VACUNADA)
-    )
-    # if(reactive_has_filter()) {
-    #   bd_poblacion <- bd_poblacion %>% filter(DEPARTAMENTO_ID == as.numeric(input$departamento))
-    # }
-    bd_poblacion
-    
-    
-    
+      TOTAL_POBLACION_VACUNADOS_DIARIO = TOTAL_NINOS + TOTAL_NINAS
+    ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, MUNICIPIO_ID) 
+
     bd_vacunas <- reactive_df_campania_dosis() %>% select(
       FECHA_VACUNACION,
       DEPARTAMENTO_NOMBRE,
@@ -140,16 +135,11 @@ shinyServer(function(input, output) {
       TOTAL_DOSIS_SPR,
       TOTAL_DOSIS_OPV,
       ANIO_COHORTE
-    ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID, DEPARTAMENTO_NOMBRE) %>%
+    ) %>% group_by(FECHA_VACUNACION, DEPARTAMENTO_ID) %>%
       summarise(
         TOTAL_DOSIS_SPR = sum(TOTAL_DOSIS_SPR),
         TOTAL_DOSIS_OPV = sum(TOTAL_DOSIS_OPV)
       )
-    
-    # if (has_filter) {
-    #   bd_vacunas <- bd_vacunas %>% filter(DEPARTAMENTO_ID == filtro_departamento)
-    # }
-    
 
     bd_nacidos_ine <- reactive_df_nacidos_vivos_ine() %>% pivot_wider(
       names_from = ANIO,
@@ -179,16 +169,13 @@ shinyServer(function(input, output) {
       POBLACION_2022,
       POBLACION_TOTAL
     ) %>% group_by(IDDEP, DEPARTAMENTO) %>% 
-      summarise(
-        POBLACION_TOTAL = sum(POBLACION_TOTAL)
-      )
-    
+      summarise(POBLACION_TOTAL = sum(POBLACION_TOTAL))
     
     if (reactive_has_filter()) {
       bd_nacidos_ine <- bd_nacidos_ine %>% filter(IDDEP == as.numeric(input$departamento))
     } else {
       # sumar todos los departamentos para obtener la población total aunque no se pueda agrupar por departamento ni por id
-      bd_nacidos_ine_nacional <- bd_nacidos_ine %>% summarise(
+      bd_nacidos_ine <- bd_nacidos_ine %>% summarise(
         IDDEP = 0,
         POBLACION_TOTAL = sum(POBLACION_TOTAL, na.rm = TRUE)
       ) %>% group_by(IDDEP) %>%
@@ -198,33 +185,21 @@ shinyServer(function(input, output) {
     }
     # 
     # rm(tabla_vacunados)
-    tabla_vacunados <- bd_poblacion %>% left_join(bd_vacunas, 
-                                                  by = c("FECHA_VACUNACION", "DEPARTAMENTO_ID", "DEPARTAMENTO_NOMBRE")) %>% 
-      mutate(
+    tabla_vacunados <- bd_vacunas %>% group_by(FECHA_VACUNACION) %>%
+      summarise(TOTAL_DOSIS_SPR = sum(TOTAL_DOSIS_SPR),
+                TOTAL_DOSIS_OPV = sum(TOTAL_DOSIS_OPV) 
+                ) %>% mutate(
         # si tiene filtro se usa la población total de nacidos vivos del INE, de lo contrario se usa la población total de nacidos vivos del INE nacional
-        VACUNA_SPR_ACUMULADO = cumsum(TOTAL_DOSIS_SPR),
-        VACUNA_OPV_ACUMULADO = cumsum(TOTAL_DOSIS_OPV),
-        COBERTURA_SPR = ifelse(reactive_has_filter(), round((VACUNA_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                               round((VACUNA_SPR_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2)),
-        COBERTURA_OPV = ifelse(reactive_has_filter(), round((VACUNA_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2), 
-                               round((VACUNA_OPV_ACUMULADO / bd_nacidos_ine_nacional$POBLACION_TOTAL) * 100, 2))
-        
-      ) %>% select(
-        DEPARTAMENTO_ID,
-        DEPARTAMENTO_NOMBRE,
-        FECHA_VACUNACION,
-        POBLACION_TOTAL_VACUNADA,
-        TOTAL_DOSIS_SPR,
-        TOTAL_DOSIS_OPV,
-        COBERTURA_SPR,
-        COBERTURA_OPV,
-        VACUNA_SPR_ACUMULADO,
-        VACUNA_OPV_ACUMULADO
+        VACUNAS_SPR_ACUMULADO = cumsum(TOTAL_DOSIS_SPR),
+        VACUNAS_OPV_ACUMULADO = cumsum(TOTAL_DOSIS_OPV),
+        COBERTURA_SPR_ACUMULADO = round((VACUNAS_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2),
+        COBERTURA_OPV_ACUMULADO = round((VACUNAS_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2),
+        FECHA_VACUNACION = as.Date(FECHA_VACUNACION)
       )
-  
+    
     grafica_avance_campania_vacunacion <- plot_ly(
       tabla_vacunados, 
-      x = ~FECHA_VACUNACION, 
+      x = ~FECHA_VACUNACION,
       y = ~TOTAL_DOSIS_SPR,
       type = 'bar', 
       name = 'Vacuna SPR', 
@@ -236,40 +211,44 @@ shinyServer(function(input, output) {
       hovertemplate = "%{y}",
       marker = list(color = color_secundario)
     ) %>% add_trace(
-      y = ~COBERTURA_SPR, 
+      y = ~COBERTURA_SPR_ACUMULADO, 
       name = 'Cobertura SPR (%)',
       type = 'scatter',
       mode = 'lines',
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = color_pregnant, dash = 'dashdot', width = 2),
-      marker = list(color = "red", symbol = 'circle')
+      line = list(color = "#10FF00", dash = 'dashdot', width = 2),
+      marker = list(color = "#333333", symbol = 'circle')
     ) %>% add_trace(
-      y = ~COBERTURA_OPV, 
+      y = ~COBERTURA_OPV_ACUMULADO,
       name = 'Cobertura OPV (%)',
       type = 'scatter',
       mode = 'lines', 
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = "green", width = 2, dash = 'dashdot'),
-      marker = list(color = color_disenio3)
+      line = list(color = "#202020", width = 2, dash = 'dashdot'),
+      marker = list(color = "#fFaafF")
     ) %>% layout(
       title = 'Avance de la campaña de vacunación',
-      xaxis = list(title = 'Fecha de vacunación', 
+      xaxis = list(title = 'Fecha de vacunación',
+                   fill = 'tozeroy',
+                   rangemode = 'tozero',
                    showgrid = FALSE,
                    showline = TRUE,
-                   zeroline = FALSE, 
+                   # zeroline = FALSE, 
                    fixedrange = TRUE,
                    tickformatstops = list(
-                     list(dtickrange = list(NULL, "M1"), value = "%d-%b-%Y"), # Formato de fecha para días
-                     list(dtickrange = list("M1", NULL), value = "%b-%Y")    # Formato de fecha para meses
+                     list(dtickrange = list(NULL, "M1"), value = "%d-%b-%Y") # Formato de fecha para días
+                     # list(dtickrange = list("M1", NULL), value = "%b-%Y")    # Formato de fecha para meses
                     )
+                   # El formato de fecha quiero que sea asi como este 01-04-24
+                   # tickformat = "%d-%m-%y"
                    ),
       yaxis = list(title = 'Total de dosis aplicadas', 
                    rangemode = 'tozero', 
                    showgrid = FALSE, 
                    showline = TRUE,
-                   zeroline = FALSE, 
+                   # zeroline = FALSE, 
                    fixedrange = TRUE
                    # tickformat = ',d'
                    ),

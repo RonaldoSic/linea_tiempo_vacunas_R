@@ -2,7 +2,7 @@
 # rm(bd_poblacion)
 # rm(list = ls()[grep("^bd_", ls())])
 
-filtro_departamento <- 14
+filtro_departamento <- 2
 # rm(filtro_departamento)
 # anio_cohorte <- 2019
 # rm(anio_cohorte)
@@ -155,7 +155,7 @@ tabla_vacunados <- bd_vacunas %>% group_by(FECHA_VACUNACION) %>%
     COBERTURA_SPR_ACUMULADO = round((VACUNAS_SPR_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2),
     COBERTURA_OPV_ACUMULADO = round((VACUNAS_OPV_ACUMULADO / bd_nacidos_ine$POBLACION_TOTAL) * 100, 2)
     
-  ) 
+  )
 
 
 
