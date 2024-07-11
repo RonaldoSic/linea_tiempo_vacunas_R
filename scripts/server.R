@@ -2,9 +2,6 @@ source("global.R")
 shinyServer(function(input, output) {
 # REACTIVE DATA
   reactive_df_campania_persona <- reactive({
-    # df_campania_vacunacion_persona %>%
-    #   filter(DEPARTAMENTO_ID == input$departamento | input$departamento == "Todos")
-    # El filtro debe ser eliminando todos los departamentos que no estén en el rango de 1 a 22
     df_campania_vacunacion_persona %>%
       filter(DEPARTAMENTO_ID == input$departamento | input$departamento == "Todos") %>%
       filter(DEPARTAMENTO_ID >= 1 & DEPARTAMENTO_ID <= 22)
@@ -27,25 +24,10 @@ shinyServer(function(input, output) {
   
   
   # Filtros para todos los gráficos -------------------------------------------
-  # 
-  # output$departamento_ddriss <- renderUI({
-  #   if (input$rb_seleccion_in == "Departamento") {
-  #     label <- "El filtro se aplica por departamento"
-  #     choise <- unique(df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE) %>% sort(decreasing = FALSE) %>% .[-1]
-  #     titleBox <- paste0("Linea de tiempo por el departamento de", input$rb_seleccion_in)
-  #   }else {
-  #     label <- "El filtro se aplica por DDRISS"
-  #     choise <- unique(df_campania_vacunacion_persona$AREA_SALUD) %>% sort(decreasing = FALSE)
-  #     titleBox <- paste0("Linea de tiempo por la DDRISS de", input$rb_seleccion_in)
-  #   }
-  #   selectInput(inputId = "departamento", label = label, choices = c("Todos", choise))
-  # })
+
   valor_id_depto_select <- 0
   valor_id_ddriss_select <- 0
   has_filter <- FALSE
-  # remove(valor_id_ddriss_select, valor_id_depto_select, has_filter)
-  # remove(has_filter)
-  
   
   # -------------Espacio para visualizar los filtros seleccionados ----------------
   output$departamento_ddriss <- renderUI({
@@ -198,18 +180,18 @@ shinyServer(function(input, output) {
       )
     
     grafica_avance_campania_vacunacion <- plot_ly(
-      tabla_vacunados, 
+      tabla_vacunados,
       x = ~FECHA_VACUNACION,
       y = ~TOTAL_DOSIS_SPR,
-      type = 'bar', 
-      name = 'Vacuna SPR', 
+      type = 'bar',
+      name = 'Vacuna SPR',
       hovertemplate = "%{y}",
-      marker = list(color = color_principal)
+      marker = list(color = color_spr)
     ) %>% add_trace(
       y = ~TOTAL_DOSIS_OPV,
       name = 'Vacuna OPV',
       hovertemplate = "%{y}",
-      marker = list(color = color_secundario)
+      marker = list(color = color_opv)
     ) %>% add_trace(
       y = ~COBERTURA_SPR_ACUMULADO, 
       name = 'Cobertura SPR (%)',
@@ -217,8 +199,8 @@ shinyServer(function(input, output) {
       mode = 'lines',
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = "#10FF00", dash = 'dashdot', width = 2),
-      marker = list(color = "#333333", symbol = 'circle')
+      line = list(color = color_line_spr, width = 2, dash = 'solid'),
+      marker = list(color = color_dot_spr, symbol = 'circle')
     ) %>% add_trace(
       y = ~COBERTURA_OPV_ACUMULADO,
       name = 'Cobertura OPV (%)',
@@ -226,31 +208,40 @@ shinyServer(function(input, output) {
       mode = 'lines', 
       yaxis = 'y2',
       hovertemplate = "%{y}%",
-      line = list(color = "#202020", width = 2, dash = 'dashdot'),
-      marker = list(color = "#fFaafF")
+      line = list(color = color_line_opv, width = 2, dash = 'solid'),
+      marker = list(color = color_dot_opv, symbol = 'square')
     ) %>% layout(
-      title = 'Avance de la campaña de vacunación',
+      title = if (input$departamento == "Todos") {
+        "Avance de la campaña de vacunación a nivel nacional"
+      } else {
+        paste0("Avance de la campaña de vacunación en ", df_campania_vacunacion_persona$DEPARTAMENTO_NOMBRE[df_campania_vacunacion_persona$DEPARTAMENTO_ID == as.numeric(input$departamento)][1])
+      },
+      font = list(
+        family = 'Arial, sans-serif',
+        size = 16,
+        color = '#002E5B'
+      ),
       xaxis = list(title = 'Fecha de vacunación',
-                   fill = 'tozeroy',
+                   tickfont = list(
+                     size = 15,
+                     color='#333333', 
+                     family='Arial, sans-serif'
+                   ),
                    rangemode = 'tozero',
                    showgrid = FALSE,
                    showline = TRUE,
-                   # zeroline = FALSE, 
+                   zeroline = FALSE,
                    fixedrange = TRUE,
                    tickformatstops = list(
                      list(dtickrange = list(NULL, "M1"), value = "%d-%b-%Y") # Formato de fecha para días
-                     # list(dtickrange = list("M1", NULL), value = "%b-%Y")    # Formato de fecha para meses
                     )
-                   # El formato de fecha quiero que sea asi como este 01-04-24
-                   # tickformat = "%d-%m-%y"
                    ),
       yaxis = list(title = 'Total de dosis aplicadas', 
                    rangemode = 'tozero', 
                    showgrid = FALSE, 
                    showline = TRUE,
-                   # zeroline = FALSE, 
+                   zeroline = FALSE,
                    fixedrange = TRUE
-                   # tickformat = ',d'
                    ),
       yaxis2 = list(title = 'Cobertura (%)', 
                     overlaying = 'y1', 
@@ -263,14 +254,14 @@ shinyServer(function(input, output) {
                     ),
       barmode = 'group',
       titlefont = list(size = 16),
-      margin = list(l = 40, r = 40, b = 100, t = 50),
-      legend = list(orientation = 'h', y = -0.8, x = 0.5, xanchor = 'center'), # Centrar la leyenda
+      margin = list(l = 80, r = 80, b = 100, t = 100),
+      legend = list(orientation = 'h', y = -0.8, x = 0.5, xanchor = 'center'),
       hovermode = 'x unified',
       paper_bgcolor = color_fondo,
       plot_bgcolor = color_fondo
     ) %>% config(
       locale = 'es',
-      displayModeBar = FALSE,
+      displayModeBar = TRUE,
       modeBarButtonsToRemove = c("select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "zoom", "pan", "autoscale"),
       toImageButtonOptions = list(
         format = "png",
@@ -282,10 +273,7 @@ shinyServer(function(input, output) {
     )
     grafica_avance_campania_vacunacion
   })
-  
   output$avance_campania_vacunacion_ddriss <- renderPlotly({
   })
-  
-  
   
 })

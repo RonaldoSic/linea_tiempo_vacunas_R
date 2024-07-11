@@ -58,10 +58,6 @@ dashboardPage(
               height = "auto",
               collapsible = TRUE,
               plotlyOutput(outputId = "avance_campania_vacunacion")
-              # shinydashboard::box(
-              #   width = 12,
-              #   
-              # )
             ),
             tabPanel(
               "Linea de tiempo por DDRISS",
@@ -70,38 +66,9 @@ dashboardPage(
               height = "auto",
               collapsible = TRUE,
               plotlyOutput(outputId = "avance_campania_vacunacion_ddriss")
-              # shinydashboard::box(
-              #   width = 12,
-              # )
             ),
             width = 12
           )          
-        )
-      )
-    ), 
-    fluidRow(
-      box(
-        title = "Glosario",
-        status = "primary",
-        collapsible = TRUE,
-        width = 12,
-        column(
-          width = 12,
-          h2("Glosario"),
-          p("En esta sección se presenta un glosario de términos utilizados en la aplicación.")
-        )
-      )
-    ), 
-    fluidRow(
-      box(
-        title = "Información",
-        status = "primary",
-        collapsible = TRUE,
-        width = 12,
-        column(
-          width = 12,
-          h2("Información"),
-          p("En esta sección se presenta información sobre la aplicación.")
         )
       )
     )
